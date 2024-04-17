@@ -1,1 +1,4 @@
 .npy
+venv/
+data/
+models/

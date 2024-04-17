@@ -1,0 +1,6 @@
+matplotlib
+monai
+numpy
+scikit-image
+tqdm
+torch
