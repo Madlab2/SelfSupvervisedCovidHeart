@@ -1,16 +1,18 @@
 from os.path import join
 from time import perf_counter as time
 from typing import Tuple, List, Dict
+from tqdm import tqdm
 
+import numpy as np
+import torch
 import matplotlib.pyplot as plt
+from skimage.measure import label as skimage_label, regionprops
+
 import monai
 from monai.data import CacheDataset, DataLoader
 from monai.networks.nets import UNet
 from monai.networks.utils import one_hot
-import numpy as np
-from skimage.measure import label as skimage_label, regionprops
-import torch
-from tqdm import tqdm
+
 from monai.transforms import (
     Compose,
     CopyItemsd,
@@ -22,10 +24,11 @@ from monai.transforms import (
     RandAxisFlipd,
 )
 
+from config import *
+from model import *
 from dataset import RepeatedCacheDataset
 from utils import extract_label_patches
-from model import model, PATCH_SIZE, loss_fn
-from config import *
+
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -66,6 +69,7 @@ train_loader = DataLoader(
 val_transforms = Compose([
     EnsureChannelFirstd(keys=['image', 'label', 'mask'], channel_dim='no_channel'),
 ])
+
 val_dataset = CacheDataset(
     data=extract_label_patches(image, val_label, PATCH_SIZE),
     transform=val_transforms,
@@ -82,9 +86,6 @@ val_loader = DataLoader(
 
 checkpoint = torch.load('/models/worst_model_checkpoint.pth')
 model.load_state_dict(checkpoint['model'])
-
-optimizer = torch.optim.Adam(model.parameters(), lr=LR)
-scaler = torch.cuda.amp.GradScaler()
 
 
 train_loader = DataLoader(
@@ -125,7 +126,7 @@ for epoch in range(NUM_EPOCHS):
         label = one_hot(label, num_classes=3)
         label = label[:, 1:]
 
-        with torch.cuda.amp.autocast():     #### Probably will crash for CPU ####
+        with torch.cuda.amp.autocast():     #### Probably will crash for CPU? ####
             pred = model(image_b)
             loss = loss_fn(input=pred.softmax(dim=1), target=label, mask=mask)
 
@@ -156,7 +157,7 @@ for epoch in range(NUM_EPOCHS):
             label = one_hot(label, num_classes=3)
             label = label[:, 1:]
 
-            with torch.cuda.amp.autocast():     #### Probably will crash for CPU ####
+            with torch.cuda.amp.autocast():     #### Probably will crash for CPU? ####
                 pred = model(image_b)
                 loss = loss_fn(input=pred.softmax(dim=1), target=label, mask=mask)
 
@@ -177,7 +178,7 @@ for epoch in range(NUM_EPOCHS):
             'epoch': epoch,
             'train_losses': all_train_losses,
             'val_losses': all_val_losses,
-        }, 'model_checkpoint.pth')
+        }, f'models/model_checkpoint_e{epoch}.pth') ### TODO adjust path to operating system
 
     print('Epoch', epoch + 1, 'train loss', mean_train_loss.item(), 'val loss', mean_val_loss.item(), 'train time', train_time, 'seconds val time', val_time, 'seconds')
 

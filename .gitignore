@@ -1,4 +1,5 @@
 .npy
+.pth
 venv/
 data/
 models/

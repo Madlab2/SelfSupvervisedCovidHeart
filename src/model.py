@@ -4,7 +4,7 @@ import monai
 from config import *
 
 
-loss_fn = monai.losses.MaskedDiceLoss(include_background=True)
+
 
 model = UNet(
     spatial_dims=3,
@@ -15,3 +15,7 @@ model = UNet(
     num_res_units=2,
     dropout=DROPOUT,  # Read about dropout here: https://www.deeplearningbook.org/contents/regularization.html#pf20
 )
+
+loss_fn = monai.losses.MaskedDiceLoss(include_background=True)
+optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+scaler = torch.cuda.amp.GradScaler()

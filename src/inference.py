@@ -1,14 +1,19 @@
-from monai.inferers import sliding_window_inference
-from dataset import RepeatedCacheDataset
-from utils import extract_label_patches
-from model import model, PATCH_SIZE, loss_fn
-import torch
 import numpy as np
-from os.path import join
+import torch
+import nibabel as nib
 import matplotlib.pyplot as plt
 from skimage.io import imsave
-import nibabel as nib
+from monai.inferers import sliding_window_inference
+
+from os.path import join
+
 from config import *
+from model import *
+from dataset import RepeatedCacheDataset
+from utils import extract_label_patches
+
+
+
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 

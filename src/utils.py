@@ -1,5 +1,5 @@
-from typing import Tuple, List, Dict
 import numpy as np
+from typing import Tuple, List, Dict
 from skimage.measure import label as skimage_label, regionprops
 
 
