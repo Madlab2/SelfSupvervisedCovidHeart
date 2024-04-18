@@ -27,7 +27,7 @@ from monai.transforms import (
 from config import *
 from model import *
 from dataset import RepeatedCacheDataset
-from utils import extract_label_patches
+from utils import *
 
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -84,7 +84,7 @@ val_loader = DataLoader(
     num_workers=0,  # Just use the main thread for now, we just need it for visualization
 )
 
-checkpoint = torch.load('/models/worst_model_checkpoint.pth')
+checkpoint = torch.load(convert_path('/models/worst_model_checkpoint.pth'))
 model.load_state_dict(checkpoint['model'])
 
 
@@ -178,7 +178,7 @@ for epoch in range(NUM_EPOCHS):
             'epoch': epoch,
             'train_losses': all_train_losses,
             'val_losses': all_val_losses,
-        }, f'models/model_checkpoint_e{epoch}.pth') ### TODO adjust path to operating system
+        }, convert_path(f'models/model_checkpoint_e{epoch}.pth')) ### TODO adjust path to operating system
 
     print('Epoch', epoch + 1, 'train loss', mean_train_loss.item(), 'val loss', mean_val_loss.item(), 'train time', train_time, 'seconds val time', val_time, 'seconds')
 

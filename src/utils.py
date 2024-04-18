@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from typing import Tuple, List, Dict
 from skimage.measure import label as skimage_label, regionprops
@@ -63,3 +64,13 @@ def extract_label_patches(
                     patches.append({ 'image': patch_image, 'label': patch_label, 'mask': patch_label > 0 })
 
     return patches
+
+
+def convert_path(path):
+    '''
+    Converts a given Linux- filepath-string to Windows-style string if on windows
+    '''
+    if os.name == 'nt':
+        # Windows Path
+        path = path.replace('/', '\\')
+    return path

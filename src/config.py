@@ -1,10 +1,8 @@
-import os
+from utils import *
 
 ### Data Config ###
-DATA_PATH='.\data\CovidHeart\covid_small'
-if os.name == 'nt':
-    # Windows Path
-    DATA_PATH = DATA_PATH.replace('/', '\\')
+DATA_PATH = convert_path('.\data\CovidHeart\covid_small')
+
 
 
 WINDOW_OVERLAP = 0.5
