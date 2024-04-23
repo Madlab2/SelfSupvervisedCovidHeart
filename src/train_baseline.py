@@ -31,10 +31,33 @@ from utils import *
 
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+#print(DEVICE)
+print("Starting...")
 
-image = torch.from_numpy(np.load(join(DATA_PATH, 'train', 'data_0.npy'))).float()
-train_label = torch.from_numpy(np.load(join(DATA_PATH, 'train', 'mask_0.npy')))
-val_label = torch.from_numpy(np.load(join(DATA_PATH, 'val', 'mask_0.npy')))
+image = np.load(join(DATA_PATH, 'train', 'data_0.npy'))
+size_x, size_y, size_z = image.shape
+#size_x //= 2
+#size_y //= 2
+#size_z //= 2
+print(size_x, size_y, size_z)
+subset_indices = (slice(0, size_x), slice(0, size_y), slice(0, size_z))
+subset_data = image[subset_indices]
+image = torch.from_numpy(subset_data).float()
+print("Image loaded")
+
+train_label = np.load(join(DATA_PATH, 'train', 'mask_0.npy'))
+subset_data = train_label[subset_indices]
+train_label = torch.from_numpy(subset_data).float()
+print("Train label loaded")
+
+val_label = np.load(join(DATA_PATH, 'val', 'mask_0.npy'))
+subset_data = val_label[subset_indices]
+val_label = torch.from_numpy(subset_data).float()
+print("Val label loaded")
+
+#image = torch.from_numpy(np.load(join(DATA_PATH, 'train', 'data_0.npy'))).float()
+#train_label = torch.from_numpy(np.load(join(DATA_PATH, 'train', 'mask_0.npy')))
+#val_label = torch.from_numpy(np.load(join(DATA_PATH, 'val', 'mask_0.npy')))
 
 train_transforms = Compose([
     EnsureChannelFirstd(keys=['image', 'label'], channel_dim='no_channel'),
@@ -54,7 +77,7 @@ train_dataset = RepeatedCacheDataset(
     data=[{ 'image': image, 'label': train_label }],
     num_repeats=BATCHES_PER_EPOCHS * TRAIN_BATCH_SIZE,
     transform=train_transforms,
-    num_workers=8,
+    num_workers=0,
     cache_rate=1.0,
     copy_cache=False  # Important to avoid slowdowns
 )
@@ -73,7 +96,7 @@ val_transforms = Compose([
 val_dataset = CacheDataset(
     data=extract_label_patches(image, val_label, PATCH_SIZE),
     transform=val_transforms,
-    num_workers=8,
+    num_workers=0,
     cache_rate=1.0
 )
 
@@ -84,7 +107,7 @@ val_loader = DataLoader(
     num_workers=0,  # Just use the main thread for now, we just need it for visualization
 )
 
-checkpoint = torch.load(convert_path('/models/worst_model_checkpoint.pth'))
+checkpoint = torch.load(convert_path('./models/worst_model_checkpoint.pth'), map_location=torch.device(DEVICE))
 model.load_state_dict(checkpoint['model'])
 
 
@@ -92,8 +115,8 @@ train_loader = DataLoader(
     train_dataset,
     batch_size=TRAIN_BATCH_SIZE,
     shuffle=False,  # Don't shuffle since we use random crops
-    num_workers=8,
-    persistent_workers=True,
+    num_workers=0,
+    persistent_workers=False,
     pin_memory=True,
 )
 
@@ -102,12 +125,12 @@ val_loader = DataLoader(
     batch_size=VAL_BATCH_SIZE,
     shuffle=False,
     ### YOUR CODE HERE ###
-    num_workers=8,
-    persistent_workers=True,
+    num_workers=0,
+    persistent_workers=False,
     pin_memory=True,
 )
 
-model.todevice(DEVICE)
+model.to(DEVICE)
 
 print('Starting training')
 all_train_losses = []
@@ -119,20 +142,32 @@ for epoch in range(NUM_EPOCHS):
     step = 0
     t0 = time()
     model.train()
+    print(f"Epoch {epoch + 1}/{NUM_EPOCHS}")
+
     for batch in tqdm(train_loader):
+        #print(f"Batch {step + 1}/{len(train_loader)}", end='\r')
         image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)
+        #print("Image loaded")
         label = batch['label'].as_tensor().to(DEVICE, non_blocking=True)
+        #print("Label loaded")
         mask = batch['mask'].as_tensor().to(DEVICE, non_blocking=True)
+        #print("Mask loaded")
         label = one_hot(label, num_classes=3)
         label = label[:, 1:]
+        #print("One hot done")
 
         with torch.cuda.amp.autocast():     #### Probably will crash for CPU? ####
             pred = model(image_b)
+            #print("Prediction done")
             loss = loss_fn(input=pred.softmax(dim=1), target=label, mask=mask)
+            #print("Loss done")
 
         scaler.scale(loss).backward()
+        #print("Backward done")
         scaler.step(optimizer)
+        #print("Step done")
         scaler.update()
+        #print("Update done")
         optimizer.zero_grad(set_to_none=None)
 
         mean_train_loss += loss.detach() * len(image_b)
@@ -178,7 +213,7 @@ for epoch in range(NUM_EPOCHS):
             'epoch': epoch,
             'train_losses': all_train_losses,
             'val_losses': all_val_losses,
-        }, convert_path(f'models/model_checkpoint_e{epoch}.pth')) ### TODO adjust path to operating system
+        }, convert_path(f'./models/model_checkpoint_e{epoch}.pth')) ### TODO adjust path to operating system
 
     print('Epoch', epoch + 1, 'train loss', mean_train_loss.item(), 'val loss', mean_val_loss.item(), 'train time', train_time, 'seconds val time', val_time, 'seconds')
 
