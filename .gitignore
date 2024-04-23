@@ -4,3 +4,4 @@ venv/
 data/
 models/
 src/__pycache__/
+wandb/

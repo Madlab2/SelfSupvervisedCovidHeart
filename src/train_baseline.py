@@ -24,6 +24,8 @@ from monai.transforms import (
     RandAxisFlipd,
 )
 
+import wandb
+
 from config import *
 from model import *
 from dataset import RepeatedCacheDataset
@@ -31,8 +33,12 @@ from utils import *
 
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-#print(DEVICE)
 print("Starting...")
+
+wandb.init(
+    project="jacana_sounds",
+    config={'batch_size': TRAIN_BATCH_SIZE, 'num_epochs': NUM_EPOCHS, 'learning_rate':LR}
+)
 
 image = np.load(join(DATA_PATH, 'train', 'data_0.npy'))
 size_x, size_y, size_z = image.shape
@@ -136,6 +142,7 @@ print('Starting training')
 all_train_losses = []
 all_val_losses = []
 best_val_loss = float('inf')
+counter = 0
 for epoch in range(NUM_EPOCHS):
     mean_train_loss = 0
     num_samples = 0
@@ -148,6 +155,10 @@ for epoch in range(NUM_EPOCHS):
         #print(f"Batch {step + 1}/{len(train_loader)}", end='\r')
         image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)
         #print("Image loaded")
+        if counter == 0:
+            print(image_b.shape)
+            counter += 1
+
         label = batch['label'].as_tensor().to(DEVICE, non_blocking=True)
         #print("Label loaded")
         mask = batch['mask'].as_tensor().to(DEVICE, non_blocking=True)
@@ -171,11 +182,13 @@ for epoch in range(NUM_EPOCHS):
         optimizer.zero_grad(set_to_none=None)
 
         mean_train_loss += loss.detach() * len(image_b)
+
         num_samples += len(image_b)
         step += 1
 
     train_time = time() - t0
     mean_train_loss = mean_train_loss / num_samples
+    wandb.log({'mean_train_loss': mean_train_loss.item()})
     all_train_losses.append(mean_train_loss.item())
 
     mean_val_loss = 0
@@ -192,16 +205,18 @@ for epoch in range(NUM_EPOCHS):
             label = one_hot(label, num_classes=3)
             label = label[:, 1:]
 
-            with torch.cuda.amp.autocast():     #### Probably will crash for CPU? ####
+            with torch.cuda.amp.autocast():
                 pred = model(image_b)
                 loss = loss_fn(input=pred.softmax(dim=1), target=label, mask=mask)
 
         mean_val_loss += loss * len(image_b)
+
         num_samples += len(image_b)
         step += 1
 
     val_time = time() - t0
     mean_val_loss = mean_val_loss / num_samples
+    wandb.log({'mean_val_loss': mean_val_loss.item()})
     all_val_losses.append(mean_val_loss.item())
     if mean_val_loss.item() < best_val_loss:
         print('Saving best model checkpoint, epoch', epoch, 'val loss', mean_val_loss.item())
@@ -213,7 +228,7 @@ for epoch in range(NUM_EPOCHS):
             'epoch': epoch,
             'train_losses': all_train_losses,
             'val_losses': all_val_losses,
-        }, convert_path(f'./models/model_checkpoint_e{epoch}.pth')) ### TODO adjust path to operating system
+        }, convert_path(f'./models/model_checkpoint_e{epoch}_loss{mean_val_loss}.pth'))
 
     print('Epoch', epoch + 1, 'train loss', mean_train_loss.item(), 'val loss', mean_val_loss.item(), 'train time', train_time, 'seconds val time', val_time, 'seconds')
 
