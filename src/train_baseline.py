@@ -100,11 +100,11 @@ val_transforms = Compose([
 ])
 
 val_dataset = CacheDataset(
-    data=extract_label_patches(image, val_label, PATCH_SIZE),
+    data=extract_label_patches(image, val_label, PATCH_SIZE)[0:25],
     transform=val_transforms,
     num_workers=0,
     cache_rate=1.0
-)
+    )
 
 val_loader = DataLoader(
     val_dataset,
@@ -116,33 +116,12 @@ val_loader = DataLoader(
 checkpoint = torch.load(convert_path('./models/worst_model_checkpoint.pth'), map_location=torch.device(DEVICE))
 model.load_state_dict(checkpoint['model'])
 
-
-train_loader = DataLoader(
-    train_dataset,
-    batch_size=TRAIN_BATCH_SIZE,
-    shuffle=False,  # Don't shuffle since we use random crops
-    num_workers=0,
-    persistent_workers=False,
-    pin_memory=True,
-)
-
-val_loader = DataLoader(
-    val_dataset,
-    batch_size=VAL_BATCH_SIZE,
-    shuffle=False,
-    ### YOUR CODE HERE ###
-    num_workers=0,
-    persistent_workers=False,
-    pin_memory=True,
-)
-
 model.to(DEVICE)
 
 print('Starting training')
 all_train_losses = []
 all_val_losses = []
 best_val_loss = float('inf')
-counter = 0
 for epoch in range(NUM_EPOCHS):
     mean_train_loss = 0
     num_samples = 0
@@ -152,33 +131,20 @@ for epoch in range(NUM_EPOCHS):
     print(f"Epoch {epoch + 1}/{NUM_EPOCHS}")
 
     for batch in tqdm(train_loader):
-        #print(f"Batch {step + 1}/{len(train_loader)}", end='\r')
-        image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)
-        #print("Image loaded")
-        if counter == 0:
-            print(image_b.shape)
-            counter += 1
-
+        image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True) # shape [1, 1, 96, 96, 96]
         label = batch['label'].as_tensor().to(DEVICE, non_blocking=True)
-        #print("Label loaded")
         mask = batch['mask'].as_tensor().to(DEVICE, non_blocking=True)
-        #print("Mask loaded")
+
         label = one_hot(label, num_classes=3)
         label = label[:, 1:]
-        #print("One hot done")
 
-        with torch.cuda.amp.autocast():     #### Probably will crash for CPU? ####
+        with torch.cuda.amp.autocast():
             pred = model(image_b)
-            #print("Prediction done")
             loss = loss_fn(input=pred.softmax(dim=1), target=label, mask=mask)
-            #print("Loss done")
 
         scaler.scale(loss).backward()
-        #print("Backward done")
         scaler.step(optimizer)
-        #print("Step done")
         scaler.update()
-        #print("Update done")
         optimizer.zero_grad(set_to_none=None)
 
         mean_train_loss += loss.detach() * len(image_b)
@@ -217,6 +183,11 @@ for epoch in range(NUM_EPOCHS):
     val_time = time() - t0
     mean_val_loss = mean_val_loss / num_samples
     wandb.log({'mean_val_loss': mean_val_loss.item()})
+    # wandb log example image patch 
+    #wandb.log({'image input': [wandb.Image(image_b.squeeze().cpu().numpy(), caption="Input Image")]}) # [96, 96, 96]
+    #wandb.log({'prediction': [wandb.Image(pred.squeeze().cpu().numpy(), caption="Input Image")]})
+    #wandb.log({'target': [wandb.Image(label.squeeze().cpu().numpy(), caption="Input Image")]})
+               
     all_val_losses.append(mean_val_loss.item())
     if mean_val_loss.item() < best_val_loss:
         print('Saving best model checkpoint, epoch', epoch, 'val loss', mean_val_loss.item())
