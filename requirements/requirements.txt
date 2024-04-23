@@ -4,3 +4,4 @@ numpy
 scikit-image
 tqdm
 torch
+nibabel

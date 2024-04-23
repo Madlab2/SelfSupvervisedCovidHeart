@@ -1,7 +1,7 @@
 from utils import *
 
 ### Data Config ###
-DATA_PATH = convert_path('.\data\CovidHeart\covid_small')
+DATA_PATH = convert_path('./data/CovidHeart/covid_small')
 
 
 WINDOW_OVERLAP = 0.5
@@ -27,4 +27,4 @@ DROPOUT = 0.2                # Should be turned off during validation/inference?
 VAL_BATCH_SIZE=1
 
 ### Inference Config ###
-INFERENCE_BATCH_SIZE = 16
+INFERENCE_BATCH_SIZE = 2

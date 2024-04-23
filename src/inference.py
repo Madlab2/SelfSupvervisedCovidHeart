@@ -49,5 +49,5 @@ pred = np.uint8(pred[0, 0] * 255)
 
 # Pick one
 #imsave('pred.tiff', pred)  # For paraview
-nib.save(nib.Nifti1Image(pred, np.eye(4)), convert_path('outputs/pred.nii.gz')) # For ITK-SNAP
+nib.save(nib.Nifti1Image(pred, np.eye(4)), convert_path('./outputs/pred.nii.gz')) # For ITK-SNAP
 #np.save('pred.npy', pred)  # For TomViz
