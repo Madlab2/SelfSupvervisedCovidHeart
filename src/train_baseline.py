@@ -26,11 +26,7 @@ from monai.transforms import (
 )
 
 import wandb
-
-if sys.path.contains("dtu/3d-imaging-center"):
-    from config_remote import *
-else:
-    from config import *
+from config import *
 
 
 from model import *
@@ -52,7 +48,7 @@ size_x, size_y, size_z = image.shape
 #size_x //= 2
 #size_y //= 2
 #size_z //= 2
-print(size_x, size_y, size_z)
+#print(size_x, size_y, size_z)
 subset_indices = (slice(0, size_x), slice(0, size_y), slice(0, size_z))
 subset_data = image[subset_indices]
 image = torch.from_numpy(subset_data).float()
