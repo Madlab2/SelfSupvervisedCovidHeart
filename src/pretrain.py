@@ -16,7 +16,11 @@ from monai.networks.utils import one_hot
 
 from monai.transforms import RandomCropd
 
-from config import *
+if sys.path.contains("dtu/3d-imaging-center"):
+    from config_remote import *
+else:
+    from config import *
+    
 from model import *
 from dataset import RepeatedCacheDataset
 from utils import *

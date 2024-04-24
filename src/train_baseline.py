@@ -1,4 +1,5 @@
 from os.path import join
+import sys
 from time import perf_counter as time
 from typing import Tuple, List, Dict
 from tqdm import tqdm
@@ -26,7 +27,12 @@ from monai.transforms import (
 
 import wandb
 
-from config import *
+if sys.path.contains("dtu/3d-imaging-center"):
+    from config_remote import *
+else:
+    from config import *
+
+
 from model import *
 from dataset import RepeatedCacheDataset
 from utils import *
@@ -34,6 +40,7 @@ from utils import *
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 print("Starting...")
+print("Data path: ", DATA_PATH)
 
 wandb.init(
     project="jacana_sounds",
