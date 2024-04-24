@@ -14,7 +14,7 @@ from monai.data import DataLoader, ArrayDataset
 from monai.networks.nets import UNet
 from monai.networks.utils import one_hot
 
-from monai.transforms import RandomCropd
+from monai.transforms import RandSpatialCropSamplesd
 
 from config import *
 
@@ -50,7 +50,7 @@ preval_dataset = ArrayDataset(val_image, val_label)
 checkpoint = torch.load(convert_path('./models/worst_model_checkpoint.pth'), map_location=torch.device(DEVICE))
 model.load_state_dict(checkpoint['model'])
 
-cropper = RandomCropd(keys=['image', 'label'], roi_size=(96, 96, 96), random_size=False)
+cropper = RandSpatialCropSamplesd(keys=['image', 'label'], roi_size=(96, 96, 96), random_size=False, num_samples=NUM_PRE_CROPS)
 
 train_loader = DataLoader(
     pretrain_dataset,

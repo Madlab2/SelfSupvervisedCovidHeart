@@ -103,7 +103,7 @@ val_transforms = Compose([
 ])
 
 val_dataset = CacheDataset(
-    data=extract_label_patches(image, val_label, PATCH_SIZE)[0:25],
+    data=extract_label_patches(image, val_label, PATCH_SIZE),
     transform=val_transforms,
     num_workers=0,
     cache_rate=1.0
@@ -184,7 +184,9 @@ for epoch in range(NUM_EPOCHS):
         step += 1
 
     val_time = time() - t0
-    mean_val_loss = mean_val_loss / num_samples
+    if num_samples == 0:
+        print("No Val Samples!!!")
+    mean_val_loss = mean_val_loss / (num_samples + 1e-9)
     wandb.log({'mean_val_loss': mean_val_loss.item()})
     # wandb log example image patch 
     #wandb.log({'image input': [wandb.Image(image_b.squeeze().cpu().numpy(), caption="Input Image")]}) # [96, 96, 96]
