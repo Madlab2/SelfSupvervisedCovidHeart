@@ -125,6 +125,8 @@ print('Starting training')
 all_train_losses = []
 all_val_losses = []
 best_val_loss = float('inf')
+total_train_time = 0.0
+
 for epoch in range(NUM_EPOCHS):
     mean_train_loss = 0
     num_samples = 0
@@ -132,7 +134,7 @@ for epoch in range(NUM_EPOCHS):
     t0 = time()
     model.train()
     print(f"Epoch {epoch + 1}/{NUM_EPOCHS}")
-
+    wandb.log({'epoch-and-time': epoch + 1})
     for batch in tqdm(train_loader):
         image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True) # shape [1, 1, 96, 96, 96]
         label = batch['label'].as_tensor().to(DEVICE, non_blocking=True)
@@ -156,8 +158,12 @@ for epoch in range(NUM_EPOCHS):
         step += 1
 
     train_time = time() - t0
+    total_train_time += train_time
+    wandb.log({"epoch": epoch+1, 'num_train_samples': num_samples})
+    if num_samples == 0:
+        print("No train Samples!!!")
     mean_train_loss = mean_train_loss / num_samples
-    wandb.log({'mean_train_loss': mean_train_loss.item()})
+    
     all_train_losses.append(mean_train_loss.item())
 
     mean_val_loss = 0
@@ -184,10 +190,14 @@ for epoch in range(NUM_EPOCHS):
         step += 1
 
     val_time = time() - t0
+    wandb.log({"epoch": epoch+1, 'num_val_samples': num_samples})
     if num_samples == 0:
         print("No Val Samples!!!")
     mean_val_loss = mean_val_loss / (num_samples + 1e-9)
-    wandb.log({'mean_val_loss': mean_val_loss.item()})
+    #wandb.log({'mean_val_loss': mean_val_loss.item()})
+    wandb.log({"epoch": epoch+1, "train_loss": mean_train_loss.item(), "val_loss": mean_val_loss.item()})
+    wandb.log({"epoch": epoch+1, 'train-time': train_time, 'total-train-time':total_train_time, 'val-time': val_time})
+
     # wandb log example image patch 
     #wandb.log({'image input': [wandb.Image(image_b.squeeze().cpu().numpy(), caption="Input Image")]}) # [96, 96, 96]
     #wandb.log({'prediction': [wandb.Image(pred.squeeze().cpu().numpy(), caption="Input Image")]})

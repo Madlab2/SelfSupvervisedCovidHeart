@@ -41,10 +41,10 @@ cut_idx_z = int(np.floor(image.shape[-1]*0.7)) # 70% split 716
 train_image = blurred_image[..., :cut_idx_z]
 train_label = image[..., :cut_idx_z]
 
-val_image = blurred_image[..., :cut_idx_z]
+val_image = blurred_image[..., cut_idx_z:]
 val_label = image[..., cut_idx_z:]
 
-pretrain_dataset = ArrayDataset(train_image, train_label)
+pretrain_dataset = ArrayDataset([{'image': train_image, 'label': train_label }])
 preval_dataset = ArrayDataset(val_image, val_label)
 
 checkpoint = torch.load(convert_path('./models/worst_model_checkpoint.pth'), map_location=torch.device(DEVICE))

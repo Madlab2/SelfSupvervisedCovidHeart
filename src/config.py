@@ -22,13 +22,13 @@ if sys.path[0].find("dtu/3d-imaging-center") != -1:
 
     ### Training Config ###
     NUM_EPOCHS = 100
-    TRAIN_BATCH_SIZE = 16
-    BATCHES_PER_EPOCHS = 250
+    TRAIN_BATCH_SIZE = 32
+    BATCHES_PER_EPOCHS = 50
     LR = 1e-4
     DROPOUT = 0.2                # Should be turned off during validation/inference?
 
     ### Validation Config ###
-    VAL_BATCH_SIZE=16
+    VAL_BATCH_SIZE=32
 
     ### Inference Config ###
     INFERENCE_BATCH_SIZE = 2
