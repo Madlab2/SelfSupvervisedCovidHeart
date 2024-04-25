@@ -10,16 +10,16 @@ import matplotlib.pyplot as plt
 from skimage.measure import label as skimage_label, regionprops
 
 import monai
-from monai.data import DataLoader, ArrayDataset
+from monai.data import DataLoader, Dataset
+from dataset import RepeatedCacheDataset
 from monai.networks.nets import UNet
-from monai.networks.utils import one_hot
+#from monai.networks.utils import one_hot
 
-from monai.transforms import RandSpatialCropSamplesd
+from monai.transforms import Compose, RandSpatialCropSamplesd, RandSpatialCropd, EnsureChannelFirstd
 
 from config import *
 
 from model import *
-from dataset import RepeatedCacheDataset
 from utils import *
 
 wandb.init(
@@ -44,31 +44,44 @@ train_label = image[..., :cut_idx_z]
 val_image = noisy_image[..., cut_idx_z:]
 val_label = image[..., cut_idx_z:]
 
-pretrain_dataset = ArrayDataset(data=[{'image': train_image, 'label': train_label }])
-preval_dataset = ArrayDataset(val_image, val_label)
 
+# TODO NUM_OUTPUT_CHANNELS has to be 1 for the pretraining. This needs to be changed for the proper training later.
+# --> before saving the pretrained model, scrap the last conv-layer (and the first skip-connect layer) 
+# and replace these layers with the right output_dim and reinitialize them
 checkpoint = torch.load(convert_path('./models/worst_model_checkpoint.pth'), map_location=torch.device(DEVICE))
 model.load_state_dict(checkpoint['model'])
+print("model: ", model)
 
-cropper = RandSpatialCropSamplesd(keys=['image', 'label'], roi_size=(96, 96, 96), random_size=False, num_samples=NUM_PRE_CROPS)
+transforms = Compose([
+    EnsureChannelFirstd(keys=['image', 'label'], channel_dim='no_channel'),
+    RandSpatialCropSamplesd(keys=['image', 'label'], roi_size=[96, 96, 96], random_size=False, num_samples=1)
+
+])
+
+cropper_samples = RandSpatialCropSamplesd(keys=['image', 'label'], roi_size=[96, 96, 96], random_size=False, num_samples=1)
+cropper = RandSpatialCropd(keys=['image', 'label'], roi_size=[96, 96, 96])
+pretrain_dataset = RepeatedCacheDataset(data=[{'image': train_image, 'label': train_label}], 
+                                        num_repeats= BATCHES_PER_EPOCHS * PRE_TRAIN_BATCH_SIZE,
+                                        transform=transforms,
+                                        )
+
+preval_dataset = RepeatedCacheDataset(data=[{'image': val_image, 'label': val_label}], 
+                                        num_repeats= BATCHES_PER_EPOCHS * PRE_VAL_BATCH_SIZE,
+                                        transform=transforms,
+                                        )
 
 train_loader = DataLoader(
     pretrain_dataset,
     batch_size=PRE_TRAIN_BATCH_SIZE,
     shuffle=False,  # Don't shuffle since we use random crops
     num_workers=0,
-    pin_memory=True,
-    collate_fn=cropper,
 )
 
 val_loader = DataLoader(
     preval_dataset,
     batch_size=PRE_VAL_BATCH_SIZE,
     shuffle=False,
-    ### YOUR CODE HERE ###
     num_workers=0,
-    pin_memory=True,
-    collate_fn=cropper,
 )
 
 model.to(DEVICE)
@@ -87,7 +100,7 @@ for epoch in range(PRE_NUM_EPOCHS):
         image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)
         label = batch['label'].as_tensor().to(DEVICE, non_blocking=True)
 
-        with torch.cuda.amp.autocast():     #### Probably will crash for CPU? ####
+        with torch.cuda.amp.autocast():
             pred = model(image_b)
             loss = pre_loss_fn(input=pred.softmax(dim=1), target=label)
 

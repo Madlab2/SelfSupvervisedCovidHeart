@@ -1,5 +1,5 @@
-.npy
-.pth
+*.npy
+*.pth
 *.nii.gz
 *.png
 venv/
