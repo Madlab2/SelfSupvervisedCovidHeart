@@ -1,5 +1,7 @@
 .npy
 .pth
+*.nii.gz
+*.png
 venv/
 data/
 models/

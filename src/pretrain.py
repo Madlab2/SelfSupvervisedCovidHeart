@@ -32,19 +32,19 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 image = torch.from_numpy(np.load(join(DATA_PATH, 'train', 'data_0.npy'))).float()
 
 print("Noising image...")
-blurred_image = add_noise(image)
+noisy_image = add_noise(image)
 print("image noise.")
 
 # cut through the image for validation and train split
 cut_idx_z = int(np.floor(image.shape[-1]*0.7)) # 70% split 716
 
-train_image = blurred_image[..., :cut_idx_z]
+train_image = noisy_image[..., :cut_idx_z]
 train_label = image[..., :cut_idx_z]
 
-val_image = blurred_image[..., cut_idx_z:]
+val_image = noisy_image[..., cut_idx_z:]
 val_label = image[..., cut_idx_z:]
 
-pretrain_dataset = ArrayDataset([{'image': train_image, 'label': train_label }])
+pretrain_dataset = ArrayDataset(data=[{'image': train_image, 'label': train_label }])
 preval_dataset = ArrayDataset(val_image, val_label)
 
 checkpoint = torch.load(convert_path('./models/worst_model_checkpoint.pth'), map_location=torch.device(DEVICE))
