@@ -48,6 +48,8 @@ val_label = image[..., cut_idx_z:]
 # TODO NUM_OUTPUT_CHANNELS has to be 1 for the pretraining. This needs to be changed for the proper training later.
 # --> before saving the pretrained model, scrap the last conv-layer (and the first skip-connect layer) 
 # and replace these layers with the right output_dim and reinitialize them
+# Comment: For now, we employ the channel hack
+
 checkpoint = torch.load(convert_path('./models/worst_model_checkpoint.pth'), map_location=torch.device(DEVICE))
 model.load_state_dict(checkpoint['model'])
 #print("model: ", model)
@@ -102,8 +104,8 @@ for epoch in range(PRE_NUM_EPOCHS):
         print('Label Shape: ', label.shape)
         with torch.cuda.amp.autocast():
             pred = model(image_b)
-            print('Pred Shape: ', pred.shape)
-            loss = pre_loss_fn(input=pred.softmax(dim=1), target=label)
+            # channel hack: network has 2 output dims, we train both to the same 1-channel target
+            loss = 1/2 * pre_loss_fn(input=pred[:, 0:1, ...].softmax(dim=1), target=label) + 1/2 * pre_loss_fn(input=pred[:, 1:2, ...].softmax(dim=1), target=label)
 
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -134,11 +136,7 @@ for epoch in range(PRE_NUM_EPOCHS):
 
             with torch.cuda.amp.autocast():     #### Probably will crash for CPU? ####
                 pred = model(image_b)
-                print('Pred_0', pred[:, 0].shape)
-                print('Pred_1', pred[:, 1].shape)
-                print('Target Shape', label.shape)
-                loss = 1/2 * pre_loss_fn(input=pred[:, 0].softmax(dim=1), target=label) + 1/2 * pre_loss_fn(input=pred[:, 1].softmax(dim=1), target=label)
-
+                loss = 1/2 * pre_loss_fn(input=pred[:, 0:1, ...].softmax(dim=1), target=label) + 1/2 * pre_loss_fn(input=pred[:, 1:2, ...].softmax(dim=1), target=label)
         mean_val_loss += loss * len(image_b)
         num_samples += len(image_b)
         step += 1
