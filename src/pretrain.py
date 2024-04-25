@@ -50,7 +50,7 @@ val_label = image[..., cut_idx_z:]
 # and replace these layers with the right output_dim and reinitialize them
 checkpoint = torch.load(convert_path('./models/worst_model_checkpoint.pth'), map_location=torch.device(DEVICE))
 model.load_state_dict(checkpoint['model'])
-print("model: ", model)
+#print("model: ", model)
 
 transforms = Compose([
     EnsureChannelFirstd(keys=['image', 'label'], channel_dim='no_channel'),
@@ -99,9 +99,10 @@ for epoch in range(PRE_NUM_EPOCHS):
     for batch in tqdm(train_loader):
         image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)
         label = batch['label'].as_tensor().to(DEVICE, non_blocking=True)
-
+        print('Label Shape: ', label.shape)
         with torch.cuda.amp.autocast():
             pred = model(image_b)
+            print('Pred Shape: ', pred.shape)
             loss = pre_loss_fn(input=pred.softmax(dim=1), target=label)
 
         scaler.scale(loss).backward()
@@ -133,7 +134,10 @@ for epoch in range(PRE_NUM_EPOCHS):
 
             with torch.cuda.amp.autocast():     #### Probably will crash for CPU? ####
                 pred = model(image_b)
-                loss = pre_loss_fn(input=pred.softmax(dim=1), target=label)
+                print('Pred_0', pred[:, 0].shape)
+                print('Pred_1', pred[:, 1].shape)
+                print('Target Shape', label.shape)
+                loss = 1/2 * pre_loss_fn(input=pred[:, 0].softmax(dim=1), target=label) + 1/2 * pre_loss_fn(input=pred[:, 1].softmax(dim=1), target=label)
 
         mean_val_loss += loss * len(image_b)
         num_samples += len(image_b)

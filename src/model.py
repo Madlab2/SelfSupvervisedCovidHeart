@@ -17,7 +17,7 @@ model = UNet(
 )
 
 loss_fn = monai.losses.MaskedDiceLoss(include_background=True)
-pre_loss_fn = monai.losses.DiceLoss()
+pre_loss_fn = monai.losses.DiceLoss(include_background=True)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 scaler = torch.cuda.amp.GradScaler()
