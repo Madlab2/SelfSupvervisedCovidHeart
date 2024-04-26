@@ -4,8 +4,10 @@ import torch
 from typing import Tuple, List, Dict
 from skimage.measure import label as skimage_label, regionprops
 
+from config import *
+
 def add_noise(image):
-    v = (0.1**0.5)  # variance of 0.1
+    v = (PRE_TRAIN_NOISVAR**0.5)  # variance of 0.1
     return image + v*torch.randn(image.shape)
 
 def extract_label_patches(

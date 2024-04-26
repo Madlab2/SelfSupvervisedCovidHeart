@@ -8,17 +8,18 @@ if sys.path[0].find("dtu/3d-imaging-center") != -1:
     DATA_PATH = convert_path('/dtu/3d-imaging-center/courses/02510/data/CovidHeart/covid_small')
 
     NUM_PRE_CROPS = 200
+    PRE_TRAIN_NOISVAR = 0.01
     WINDOW_OVERLAP = 0.5
     PATCH_SIZE= (96,) * 3         # Size of crops
     PROB_FOREGROUND_CENTER= 0.95  # Probability that center of crop is a labeled foreground voxel (ensures the crops often contain a label)
 
     ### Pretraining Config ###
     PRE_NUM_EPOCHS = 25
-    PRE_TRAIN_BATCH_SIZE = 8
+    PRE_TRAIN_BATCH_SIZE = 16
     PRE_BATCHES_PER_EPOCHS = 100
     PRE_LR = 1e-4
 
-    PRE_VAL_BATCH_SIZE=5
+    PRE_VAL_BATCH_SIZE=16
 
     ### Training Config ###
     NUM_EPOCHS = 100

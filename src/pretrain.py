@@ -88,6 +88,21 @@ val_loader = DataLoader(
 
 model.to(DEVICE)
 
+batch = next(iter(train_loader))  # Get first batch
+
+fig, ax = plt.subplots(2, 8, figsize=(18, 4))
+for i in range(8):
+    ax[0, i].imshow(batch['image'][i, 0, :, :, batch['image'].shape[3] // 2], cmap='gray')
+    ax[1, i].imshow(batch['label'][i, 0, :, :, batch['label'].shape[3] // 2], cmap='gray')
+
+    if i == 0:
+        ax[0, i].set_ylabel('image')
+        ax[1, i].set_ylabel('label')
+        
+plt.savefig('./outputs/figures/train_noise_denoise.png', dpi=500)
+
+# TODO: print some noise/denoise image pairs
+
 print('Starting pretraining')
 all_train_losses = []
 all_val_losses = []
