@@ -214,7 +214,7 @@ for epoch in range(NUM_EPOCHS):
             'epoch': epoch,
             'train_losses': all_train_losses,
             'val_losses': all_val_losses,
-        }, convert_path(f'./models/model_checkpoint_e{epoch}_loss{mean_val_loss}.pth'))
+        }, convert_path(f'./models/baseline/model_checkpoint_e{epoch}_loss{mean_val_loss}.pth'))
 
     print('Epoch', epoch + 1, 'train loss', mean_train_loss.item(), 'val loss', mean_val_loss.item(), 'train time', train_time, 'seconds val time', val_time, 'seconds')
 

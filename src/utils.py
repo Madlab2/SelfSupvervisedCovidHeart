@@ -4,7 +4,8 @@ import torch
 from typing import Tuple, List, Dict
 from skimage.measure import label as skimage_label, regionprops
 
-from config import *
+#from config import PRE_TRAIN_NOISVAR
+PRE_TRAIN_NOISVAR = 0.01
 
 def add_noise(image):
     v = (PRE_TRAIN_NOISVAR**0.5)  # variance of 0.1

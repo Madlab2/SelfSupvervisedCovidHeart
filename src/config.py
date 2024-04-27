@@ -15,11 +15,11 @@ if sys.path[0].find("dtu/3d-imaging-center") != -1:
 
     ### Pretraining Config ###
     PRE_NUM_EPOCHS = 25
-    PRE_TRAIN_BATCH_SIZE = 16
-    PRE_BATCHES_PER_EPOCHS = 100
+    PRE_TRAIN_BATCH_SIZE = 32
+    PRE_BATCHES_PER_EPOCHS = 50
     PRE_LR = 1e-4
 
-    PRE_VAL_BATCH_SIZE=16
+    PRE_VAL_BATCH_SIZE=32
 
     ### Training Config ###
     NUM_EPOCHS = 100
@@ -39,7 +39,8 @@ else:
 
     ### Data Config ###
     DATA_PATH = convert_path('./data/CovidHeart/covid_small')
-
+    
+    PRE_TRAIN_NOISVAR = 0.01
     NUM_PRE_CROPS = 15
     WINDOW_OVERLAP = 0.5
     PATCH_SIZE= (96,) * 3         # Size of crops

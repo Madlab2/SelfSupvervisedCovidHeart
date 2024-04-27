@@ -63,12 +63,12 @@ transforms = Compose([
 cropper_samples = RandSpatialCropSamplesd(keys=['image', 'label'], roi_size=[96, 96, 96], random_size=False, num_samples=1)
 cropper = RandSpatialCropd(keys=['image', 'label'], roi_size=[96, 96, 96])
 pretrain_dataset = RepeatedCacheDataset(data=[{'image': train_image, 'label': train_label}], 
-                                        num_repeats= BATCHES_PER_EPOCHS * PRE_TRAIN_BATCH_SIZE,
+                                        num_repeats= PRE_BATCHES_PER_EPOCHS * PRE_TRAIN_BATCH_SIZE,
                                         transform=transforms,
                                         )
 
 preval_dataset = RepeatedCacheDataset(data=[{'image': val_image, 'label': val_label}], 
-                                        num_repeats= BATCHES_PER_EPOCHS * PRE_VAL_BATCH_SIZE,
+                                        num_repeats= PRE_BATCHES_PER_EPOCHS * PRE_VAL_BATCH_SIZE,
                                         transform=transforms,
                                         )
 
@@ -87,7 +87,7 @@ val_loader = DataLoader(
 )
 
 model.to(DEVICE)
-
+print("Generating figure...")
 batch = next(iter(train_loader))  # Get first batch
 
 fig, ax = plt.subplots(2, 8, figsize=(18, 4))
@@ -98,7 +98,7 @@ for i in range(8):
     if i == 0:
         ax[0, i].set_ylabel('image')
         ax[1, i].set_ylabel('label')
-        
+print("Saving figure...")
 plt.savefig('./outputs/figures/train_noise_denoise.png', dpi=500)
 
 # TODO: print some noise/denoise image pairs
@@ -107,16 +107,21 @@ print('Starting pretraining')
 all_train_losses = []
 all_val_losses = []
 best_val_loss = float('inf')
+total_train_time = 0.0
+
 for epoch in range(PRE_NUM_EPOCHS):
     mean_train_loss = 0
     num_samples = 0
     step = 0
     t0 = time()
     model.train()
+    print(f"Epoch {epoch + 1}/{PRE_NUM_EPOCHS}")
+    wandb.log({'epoch-and-time (pretrain)': epoch + 1})
+
     for batch in tqdm(train_loader):
         image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)
         label = batch['label'].as_tensor().to(DEVICE, non_blocking=True)
-        print('Label Shape: ', label.shape)
+        
         with torch.cuda.amp.autocast():
             pred = model(image_b)
             # channel hack: network has 2 output dims, we train both to the same 1-channel target
@@ -132,9 +137,10 @@ for epoch in range(PRE_NUM_EPOCHS):
         step += 1
 
     train_time = time() - t0
-    mean_train_loss = mean_train_loss / num_samples
-    wandb.log({'mean_train_loss_pretrain': mean_train_loss})
+    total_train_time += train_time
+    wandb.log({"epoch (pretrain)": epoch+1, 'num_train_samples (pretrain)': num_samples})
 
+    mean_train_loss = mean_train_loss / num_samples
     all_train_losses.append(mean_train_loss.item())
 
     mean_val_loss = 0
@@ -156,9 +162,12 @@ for epoch in range(PRE_NUM_EPOCHS):
         num_samples += len(image_b)
         step += 1
 
-    val_time = time() - t0
+    val_time = time() - t0#
+    wandb.log({"epoch (pretrain)": epoch+1, 'num_val_samples (pretrain)': num_samples})
     mean_val_loss = mean_val_loss / num_samples
-    wandb.log({'mean_val_loss_pretrain': mean_val_loss})
+   
+    wandb.log({"epoch (pretrain)": epoch+1, "train_loss (pretrain)": mean_train_loss.item(), "val_loss (pretrain)": mean_val_loss.item()})
+    wandb.log({"epoch (pretrain)": epoch+1, 'train-time (pretrain)': train_time, 'total-train-time (pretrain)': total_train_time, 'val-time (pretrain)': val_time})
 
     # wandb log example image patch 
     # wandb.log({'image input': [wandb.Image(image_b.squeeze(0), caption="Input Image (blurred)")]})
@@ -176,7 +185,7 @@ for epoch in range(PRE_NUM_EPOCHS):
             'epoch': epoch,
             'train_losses': all_train_losses,
             'val_losses': all_val_losses,
-        }, convert_path(f'models/pretrain_model_checkpoint_e{epoch}_loss{mean_val_loss}.pth')) ### TODO adjust path to operating system
+        }, convert_path(f'models/pretrain/pretrain_model_checkpoint_e{epoch}_loss{mean_val_loss}.pth')) ### TODO adjust path to operating system
 
     print('Epoch', epoch + 1, 'train loss', mean_train_loss.item(), 'val loss', mean_val_loss.item(), 'train time', train_time, 'seconds val time', val_time, 'seconds')
 
