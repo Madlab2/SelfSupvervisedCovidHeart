@@ -6,8 +6,8 @@ if sys.path[0].find("dtu/3d-imaging-center") != -1:
 
     ### Data Config ###
     DATA_PATH = convert_path('/dtu/3d-imaging-center/courses/02510/data/CovidHeart/covid_small')
-    SCRATCH_MODEL = './models/worst_model_checkpoint.pth'   # no pretraining
-    PRE_MODEL_NAME = 'models/pretrain/pretrain_model_checkpoint_e0_loss0.36066552996635437.pth' # specifiy path for pretrained model
+    SCRATCH_MODEL = 'models/worst_model_checkpoint.pth'   # no pretraining
+    PRE_MODEL_NAME = 'models/pretrain/run_2_good_good_val/pretrain_model_checkpoint_e32_loss0.042500823736190796.pth' # specifiy path for pretrained model
 
     PRE_TRAIN_NOISVAR = 0.01
     WINDOW_OVERLAP = 0.5
@@ -15,7 +15,7 @@ if sys.path[0].find("dtu/3d-imaging-center") != -1:
     PROB_FOREGROUND_CENTER= 0.95  # Probability that center of crop is a labeled foreground voxel (ensures the crops often contain a label)
 
     ### Pretraining Config ###
-    PRE_NUM_EPOCHS = 25
+    PRE_NUM_EPOCHS = 40
     PRE_TRAIN_BATCH_SIZE = 4
     PRE_BATCHES_PER_TRAIN_EPOCH = 25
     PRE_LR = 1e-4
