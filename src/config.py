@@ -17,9 +17,10 @@ if sys.path[0].find("dtu/3d-imaging-center") != -1:
     ### Pretraining Config ###
     PRE_NUM_EPOCHS = 25
     PRE_TRAIN_BATCH_SIZE = 4
-    PRE_BATCHES_PER_EPOCHS = 25
+    PRE_BATCHES_PER_TRAIN_EPOCH = 25
     PRE_LR = 1e-4
 
+    PRE_BATCHES_PER_VAL_EPOCH = 10
     PRE_VAL_BATCH_SIZE=4
 
     ### Training Config ###
@@ -52,9 +53,10 @@ else:
     ### Pretraining Config ###
     PRE_NUM_EPOCHS = 5
     PRE_TRAIN_BATCH_SIZE = 1
-    PRE_BATCHES_PER_EPOCHS = 10
+    PRE_BATCHES_PER_TRAIN_EPOCH = 10
     PRE_LR = 1e-4
 
+    PRE_BATCHES_PER_VAL_EPOCH = 5
     PRE_VAL_BATCH_SIZE=1
 
     ### Training Config ###

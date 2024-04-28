@@ -58,12 +58,12 @@ transforms = Compose([
 cropper_samples = RandSpatialCropSamplesd(keys=['image', 'label'], roi_size=[96, 96, 96], random_size=False, num_samples=1)
 cropper = RandSpatialCropd(keys=['image', 'label'], roi_size=[96, 96, 96])
 pretrain_dataset = RepeatedCacheDataset(data=[{'image': train_image, 'label': train_label}], 
-                                        num_repeats= PRE_BATCHES_PER_EPOCHS * PRE_TRAIN_BATCH_SIZE,
+                                        num_repeats= PRE_BATCHES_PER_TRAIN_EPOCH * PRE_TRAIN_BATCH_SIZE,
                                         transform=transforms,
                                         )
 
 preval_dataset = RepeatedCacheDataset(data=[{'image': val_image, 'label': val_label}], 
-                                        num_repeats= PRE_BATCHES_PER_EPOCHS * PRE_VAL_BATCH_SIZE,
+                                        num_repeats= PRE_BATCHES_PER_VAL_EPOCH * PRE_VAL_BATCH_SIZE,
                                         transform=transforms,
                                         )
 
@@ -85,7 +85,7 @@ val_loader = DataLoader(
 print("Generating figure...")
 batch = next(iter(train_loader))  # Get first batch
 
-fig, ax = plt.subplots(2, 8, figsize=(18, 4))
+fig, ax = plt.subplots(2, 4, figsize=(9, 4))
 for i in range(4):
     ax[0, i].imshow(batch['image'][i, 0, :, :, batch['image'].shape[3] // 2], cmap='gray')
     ax[1, i].imshow(batch['label'][i, 0, :, :, batch['label'].shape[3] // 2], cmap='gray')
@@ -93,6 +93,7 @@ for i in range(4):
     if i == 0:
         ax[0, i].set_ylabel('image')
         ax[1, i].set_ylabel('label')
+
 print("Saving figure...")
 plt.savefig('./outputs/figures/train_noise_denoise.png', dpi=500)
 
@@ -117,13 +118,15 @@ for epoch in range(PRE_NUM_EPOCHS):
     wandb.log({'epoch-and-time (pretrain)': epoch + 1})
 
     for batch in tqdm(train_loader):
-        image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)
-        label = batch['label'].as_tensor().to(DEVICE, non_blocking=True)
+        image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)# [1, 1, 96, 96, 96]
+        label = batch['label'].as_tensor().to(DEVICE, non_blocking=True) # [1, 1, 96, 96, 96]
+        
+        # channel hack: make label.shape be [1, 2, 96, 96, 96] by duplicating/copying. We train both out-channels to the same target
+        label = label.repeat(1, 2, 1, 1, 1)
         
         with torch.cuda.amp.autocast():
-            pred = model(image_b)
-            # channel hack: network has 2 output dims, we train both to the same 1-channel target
-            loss = 1/2 * pre_loss_fn(input=pred[:, 0:1, ...].softmax(dim=1), target=label) + 1/2 * pre_loss_fn(input=pred[:, 1:2, ...].softmax(dim=1), target=label)
+            pred = model(image_b)  # [1, 2, 96, 96, 96]
+            loss = pre_loss_fn(input=pred.softmax(dim=1), target=label)
 
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -148,19 +151,22 @@ for epoch in range(PRE_NUM_EPOCHS):
     model.eval()
 
     for batch in tqdm(val_loader):
-        image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)
-        label = batch['label'].as_tensor().to(DEVICE, non_blocking=True)
-        
+        image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)# [1, 1, 96, 96, 96]
+        label = batch['label'].as_tensor().to(DEVICE, non_blocking=True) # [1, 1, 96, 96, 96]
+        # channel hack: make label.shape be [1, 2, 96, 96, 96] by duplicating/copying. We train both out-channels to the same target
+        label = label.repeat(1, 2, 1, 1, 1)
+
         with torch.no_grad():
 
-            with torch.cuda.amp.autocast():     #### Probably will crash for CPU? ####
-                pred = model(image_b)
-                loss = 1/2 * pre_loss_fn(input=pred[:, 0:1, ...].softmax(dim=1), target=label) + 1/2 * pre_loss_fn(input=pred[:, 1:2, ...].softmax(dim=1), target=label)
+            with torch.cuda.amp.autocast():
+                pred = model(image_b)  # [1, 2, 96, 96, 96]
+                loss = pre_loss_fn(input=pred.softmax(dim=1), target=label)
+
         mean_val_loss += loss * len(image_b)
         num_samples += len(image_b)
         step += 1
 
-    val_time = time() - t0#
+    val_time = time() - t0
     wandb.log({"epoch (pretrain)": epoch+1, 'num_val_samples (pretrain)': num_samples})
     mean_val_loss = mean_val_loss / num_samples
    

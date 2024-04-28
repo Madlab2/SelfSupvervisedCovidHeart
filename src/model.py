@@ -1,5 +1,6 @@
 from monai.networks.nets import UNet
 import torch
+import torch.nn as nn
 import monai
 from config import *
 
@@ -17,7 +18,8 @@ model = UNet(
 )
 
 loss_fn = monai.losses.MaskedDiceLoss(include_background=True)
-pre_loss_fn = monai.losses.DiceLoss(include_background=True)
+#pre_loss_fn = monai.losses.DiceLoss(include_background=True)
+pre_loss_fn = nn.MSELoss()
 
 optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 scaler = torch.cuda.amp.GradScaler()
