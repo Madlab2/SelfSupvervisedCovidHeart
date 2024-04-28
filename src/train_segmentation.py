@@ -203,10 +203,20 @@ for epoch in range(NUM_EPOCHS):
     wandb.log({"epoch": epoch+1, "train_loss": mean_train_loss.item(), "val_loss": mean_val_loss.item()})
     wandb.log({"epoch": epoch+1, 'train-time': train_time, 'total-train-time':total_train_time, 'val-time': val_time})
 
-    # wandb log example image patch 
-    #wandb.log({'image input': [wandb.Image(image_b.squeeze().cpu().numpy(), caption="Input Image")]}) # [96, 96, 96]
-    #wandb.log({'prediction': [wandb.Image(pred.squeeze().cpu().numpy(), caption="Input Image")]})
-    #wandb.log({'target': [wandb.Image(label.squeeze().cpu().numpy(), caption="Input Image")]})
+    # wandb log example image patch
+    pred = pred.to('cpu').numpy()
+    image_plot = batch['image'].to('cpu').numpy()
+    label_plot = batch['label'].to('cpu').numpy()
+    fig, ax = plt.subplots(3, 4, figsize=(9, 6))
+    for i in range(4):
+        ax[0, i].imshow(image_plot[i, 0, :, :, image_plot.shape[3] // 2], cmap='gray')
+        ax[1, i].imshow(pred[i, 0, :, :, pred.shape[3] // 2], cmap='gray')
+        ax[2, i].imshow(label_plot[i, 0, :, :, label_plot.shape[3] // 2], cmap='gray')
+        if i == 0:
+            ax[0, i].set_ylabel('image')
+            ax[1, i].set_ylabel('prediction')
+            ax[2, i].set_ylabel('label')
+    wandb.log({"epoch": epoch+1,'Segmentation-Pred': fig})
     
     if mean_val_loss.item() < best_val_loss:
         print('Saving best model checkpoint, epoch', epoch, 'val loss', mean_val_loss.item())

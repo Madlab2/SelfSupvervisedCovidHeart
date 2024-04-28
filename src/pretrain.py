@@ -179,14 +179,13 @@ for epoch in range(PRE_NUM_EPOCHS):
     label_plot = batch['label'].to('cpu').numpy()
     fig, ax = plt.subplots(3, 4, figsize=(9, 6))
     for i in range(4):
-        ax[0, i].imshow(batch['image'][i, 0, :, :, batch['image'].shape[3] // 2], cmap='gray')
+        ax[0, i].imshow(image_plot[i, 0, :, :, image_plot.shape[3] // 2], cmap='gray')
         ax[1, i].imshow(pred[i, 0, :, :, pred.shape[3] // 2], cmap='gray')
-        ax[2, i].imshow(batch['label'][i, 0, :, :, batch['label'].shape[3] // 2], cmap='gray')
+        ax[2, i].imshow(label_plot[i, 0, :, :, label_plot.shape[3] // 2], cmap='gray')
         if i == 0:
             ax[0, i].set_ylabel('image')
             ax[1, i].set_ylabel('prediction')
             ax[2, i].set_ylabel('label')
-    plt.savefig('./outputs/figures/train_noise_denoise_pred.png', dpi=500)
     wandb.log({"epoch (pretrain)": epoch+1,'Noise-Denoise-Pred': fig})
     
     all_val_losses.append(mean_val_loss.item())
