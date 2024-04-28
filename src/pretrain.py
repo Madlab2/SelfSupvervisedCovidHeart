@@ -1,31 +1,27 @@
 from os.path import join
 from time import perf_counter as time
-from typing import Tuple, List, Dict
+#from typing import Tuple, List, Dict
 from tqdm import tqdm
 import wandb
 
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-from skimage.measure import label as skimage_label, regionprops
+#from skimage.measure import label as skimage_label, regionprops
 
 import monai
-from monai.data import DataLoader, Dataset
+from monai.data import DataLoader#, Dataset
 from dataset import RepeatedCacheDataset
-from monai.networks.nets import UNet
+#from monai.networks.nets import UNet
 #from monai.networks.utils import one_hot
 
 from monai.transforms import Compose, RandSpatialCropSamplesd, RandSpatialCropd, EnsureChannelFirstd
 
 from config import *
-
 from model import *
 from utils import *
 
-wandb.init(
-    project="jacana_sounds", # TODO add titel with pretrain
-    config={'batch_size': PRE_TRAIN_BATCH_SIZE, 'num_epochs': PRE_NUM_EPOCHS, 'learning_rate':PRE_LR}
-)
+
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -45,19 +41,17 @@ val_image = noisy_image[..., cut_idx_z:]
 val_label = image[..., cut_idx_z:]
 
 
-# TODO NUM_OUTPUT_CHANNELS has to be 1 for the pretraining. This needs to be changed for the proper training later.
+# NUM_OUTPUT_CHANNELS has to be 1 for the pretraining. This needs to be changed for the proper training later.
 # --> before saving the pretrained model, scrap the last conv-layer (and the first skip-connect layer) 
 # and replace these layers with the right output_dim and reinitialize them
 # Comment: For now, we employ the channel hack
 
 checkpoint = torch.load(convert_path('./models/worst_model_checkpoint.pth'), map_location=torch.device(DEVICE))
 model.load_state_dict(checkpoint['model'])
-#print("model: ", model)
 
 transforms = Compose([
     EnsureChannelFirstd(keys=['image', 'label'], channel_dim='no_channel'),
     RandSpatialCropSamplesd(keys=['image', 'label'], roi_size=[96, 96, 96], random_size=False, num_samples=1)
-
 ])
 
 cropper_samples = RandSpatialCropSamplesd(keys=['image', 'label'], roi_size=[96, 96, 96], random_size=False, num_samples=1)
@@ -91,7 +85,7 @@ print("Generating figure...")
 batch = next(iter(train_loader))  # Get first batch
 
 fig, ax = plt.subplots(2, 8, figsize=(18, 4))
-for i in range(8):
+for i in range(4):
     ax[0, i].imshow(batch['image'][i, 0, :, :, batch['image'].shape[3] // 2], cmap='gray')
     ax[1, i].imshow(batch['label'][i, 0, :, :, batch['label'].shape[3] // 2], cmap='gray')
 
@@ -101,7 +95,10 @@ for i in range(8):
 print("Saving figure...")
 plt.savefig('./outputs/figures/train_noise_denoise.png', dpi=500)
 
-# TODO: print some noise/denoise image pairs
+wandb.init(
+    project="jacana_sounds", # TODO add titel with pretrain
+    config={'batch_size': PRE_TRAIN_BATCH_SIZE, 'num_epochs': PRE_NUM_EPOCHS, 'learning_rate':PRE_LR}
+)
 
 print('Starting pretraining')
 all_train_losses = []

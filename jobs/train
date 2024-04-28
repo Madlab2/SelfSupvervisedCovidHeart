@@ -1,0 +1,14 @@
+#!/bin/sh
+#BSUB -q compute
+#BSUB -J job
+#BSUB -n 4
+#BSUB -W 1:00
+#BSUB -R "rusage[mem=17GB]"
+#BSUB -R "span[hosts=1]"
+#BSUB -o tmp_res/%J.out
+#BSUB -e tmp_res/%J.err
+
+source /dtu/3d-imaging-center/courses/conda/conda_init.sh
+conda activate env-02510
+
+python3 -u src/train_baseline.py
