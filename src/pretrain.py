@@ -174,10 +174,21 @@ for epoch in range(PRE_NUM_EPOCHS):
     wandb.log({"epoch (pretrain)": epoch+1, 'train-time (pretrain)': train_time, 'total-train-time (pretrain)': total_train_time, 'val-time (pretrain)': val_time})
 
     # wandb log example image patch 
-    # wandb.log({'image input': [wandb.Image(image_b.squeeze(0), caption="Input Image (blurred)")]})
-    # wandb.log({'prediction': [wandb.Image(pred.squeeze(0), caption="Predicted Image (unblurred)")]})
-    # wandb.log({'target': [wandb.Image(label.squeeze(0), caption="Target Image (unblurred)")]})
-
+    pred = pred.to('cpu').numpy()
+    image_plot = batch['image'].to('cpu').numpy()
+    label_plot = batch['label'].to('cpu').numpy()
+    fig, ax = plt.subplots(3, 4, figsize=(9, 6))
+    for i in range(4):
+        ax[0, i].imshow(batch['image'][i, 0, :, :, batch['image'].shape[3] // 2], cmap='gray')
+        ax[1, i].imshow(pred[i, 0, :, :, pred.shape[3] // 2], cmap='gray')
+        ax[2, i].imshow(batch['label'][i, 0, :, :, batch['label'].shape[3] // 2], cmap='gray')
+        if i == 0:
+            ax[0, i].set_ylabel('image')
+            ax[1, i].set_ylabel('prediction')
+            ax[2, i].set_ylabel('label')
+    plt.savefig('./outputs/figures/train_noise_denoise_pred.png', dpi=500)
+    wandb.log({"epoch (pretrain)": epoch+1,'Noise-Denoise-Pred': fig})
+    
     all_val_losses.append(mean_val_loss.item())
     if mean_val_loss.item() < best_val_loss:
         print('Saving best model checkpoint, epoch', epoch, 'val loss', mean_val_loss.item())
