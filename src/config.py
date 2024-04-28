@@ -11,6 +11,7 @@ if sys.path[0].find("dtu/3d-imaging-center") != -1:
     WINDOW_OVERLAP = 0.5
     PATCH_SIZE= (96,) * 3         # Size of crops
     PROB_FOREGROUND_CENTER= 0.95  # Probability that center of crop is a labeled foreground voxel (ensures the crops often contain a label)
+    MODEL_NAME = 'model_checkpoint.pth'
 
     ### Pretraining Config ###
     PRE_NUM_EPOCHS = 25
@@ -45,6 +46,7 @@ else:
     WINDOW_OVERLAP = 0.5
     PATCH_SIZE= (96,) * 3         # Size of crops
     PROB_FOREGROUND_CENTER= 0.95  # Probability that center of crop is a labeled foreground voxel (ensures the crops often contain a label)
+    MODEL_NAME = 'model_checkpoint.pth'
 
     ### Pretraining Config ###
     PRE_NUM_EPOCHS = 5
