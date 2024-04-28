@@ -11,4 +11,4 @@
 source /dtu/3d-imaging-center/courses/conda/conda_init.sh
 conda activate env-02510
 
-python3 -u src/train_baseline.py
+python3 -u src/train_segmentation.py train_with_pretrain

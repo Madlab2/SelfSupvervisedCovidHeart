@@ -46,8 +46,9 @@ val_label = image[..., cut_idx_z:]
 # and replace these layers with the right output_dim and reinitialize them
 # Comment: For now, we employ the channel hack
 
-checkpoint = torch.load(convert_path('./models/worst_model_checkpoint.pth'), map_location=torch.device(DEVICE))
+checkpoint = torch.load(convert_path(SCRATCH_MODEL), map_location=torch.device(DEVICE))
 model.load_state_dict(checkpoint['model'])
+model.to(DEVICE)
 
 transforms = Compose([
     EnsureChannelFirstd(keys=['image', 'label'], channel_dim='no_channel'),
@@ -80,7 +81,7 @@ val_loader = DataLoader(
     num_workers=0,
 )
 
-model.to(DEVICE)
+
 print("Generating figure...")
 batch = next(iter(train_loader))  # Get first batch
 

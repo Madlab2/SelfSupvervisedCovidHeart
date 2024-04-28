@@ -3,6 +3,7 @@ import sys
 from time import perf_counter as time
 from typing import Tuple, List, Dict
 from tqdm import tqdm
+import argparse
 
 import numpy as np
 import torch
@@ -33,22 +34,29 @@ from model import *
 from dataset import RepeatedCacheDataset
 from utils import *
 
+parser = argparse.ArgumentParser()
+parser.add_argument('mode', type=str, default='train_baseline', choices=['train_baseline', 'train_with_pretrain'], help='Whether to train from scratch or using pretrained model (default: %(default)s)')
+args = parser.parse_args()
+
+if args.mode == "train_baseline":
+    print("Training from scratch")
+    MODEL = SCRATCH_MODEL
+    SAVE_PATH = './models/baseline/'
+
+elif args.mode == "train_with_pretrain":
+    print("Training using pretrained model: ", PRE_MODEL_NAME)
+    MODEL = PRE_MODEL_NAME
+    SAVE_PATH = './models/train_with_pretrain/'
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-print("Starting...")
+print("Using device: ", DEVICE)
 print("Data path: ", DATA_PATH)
 
-wandb.init(
-    project="jacana_sounds",
-    config={'batch_size': TRAIN_BATCH_SIZE, 'num_epochs': NUM_EPOCHS, 'learning_rate':LR}
-)
 
 image = np.load(join(DATA_PATH, 'train', 'data_0.npy'))
 size_x, size_y, size_z = image.shape
-#size_x //= 2
-#size_y //= 2
-#size_z //= 2
-#print(size_x, size_y, size_z)
+
+# if we want to slice image down, do size_x//n etc.
 subset_indices = (slice(0, size_x), slice(0, size_y), slice(0, size_z))
 subset_data = image[subset_indices]
 image = torch.from_numpy(subset_data).float()
@@ -64,10 +72,7 @@ subset_data = val_label[subset_indices]
 val_label = torch.from_numpy(subset_data).float()
 print("Val label loaded")
 
-#image = torch.from_numpy(np.load(join(DATA_PATH, 'train', 'data_0.npy'))).float()
-#train_label = torch.from_numpy(np.load(join(DATA_PATH, 'train', 'mask_0.npy')))
-#val_label = torch.from_numpy(np.load(join(DATA_PATH, 'val', 'mask_0.npy')))
-
+# Loading Validation and Training Data with transforms, creating Dataloaders
 train_transforms = Compose([
     EnsureChannelFirstd(keys=['image', 'label'], channel_dim='no_channel'),
     CopyItemsd(keys=['label'], times=1, names=['mask']),                                                  # Copy label to new image mask
@@ -81,7 +86,6 @@ train_transforms = Compose([
     RandRotate90d(keys=['image', 'label', 'mask'], prob=0.5, spatial_axes=(0, 2)),                        # Randomly rotate
     RandAxisFlipd(keys=['image', 'label', 'mask'], prob=0.1),                                             # Randomly flip
 ])
-
 train_dataset = RepeatedCacheDataset(
     data=[{ 'image': image, 'label': train_label }],
     num_repeats=BATCHES_PER_EPOCHS * TRAIN_BATCH_SIZE,
@@ -90,7 +94,6 @@ train_dataset = RepeatedCacheDataset(
     cache_rate=1.0,
     copy_cache=False  # Important to avoid slowdowns
 )
-
 train_loader = DataLoader(
     train_dataset,
     batch_size=TRAIN_BATCH_SIZE,
@@ -98,17 +101,16 @@ train_loader = DataLoader(
     num_workers=0,  # Just use the main thread for now, we just need it for visualization
 )
 
+
 val_transforms = Compose([
     EnsureChannelFirstd(keys=['image', 'label', 'mask'], channel_dim='no_channel'),
 ])
-
 val_dataset = CacheDataset(
     data=extract_label_patches(image, val_label, PATCH_SIZE),
     transform=val_transforms,
     num_workers=0,
     cache_rate=1.0
-    )
-
+)
 val_loader = DataLoader(
     val_dataset,
     batch_size=VAL_BATCH_SIZE,
@@ -116,10 +118,15 @@ val_loader = DataLoader(
     num_workers=0,  # Just use the main thread for now, we just need it for visualization
 )
 
-checkpoint = torch.load(convert_path('./models/worst_model_checkpoint.pth'), map_location=torch.device(DEVICE))
+# Loading Model
+checkpoint = torch.load(convert_path(MODEL), map_location=torch.device(DEVICE))
 model.load_state_dict(checkpoint['model'])
-
 model.to(DEVICE)
+
+wandb.init(
+    project="jacana_sounds",
+    config={'batch_size': TRAIN_BATCH_SIZE, 'num_epochs': NUM_EPOCHS, 'learning_rate':LR}
+)
 
 print('Starting training')
 all_train_losses = []
@@ -160,10 +167,8 @@ for epoch in range(NUM_EPOCHS):
     train_time = time() - t0
     total_train_time += train_time
     wandb.log({"epoch": epoch+1, 'num_train_samples': num_samples})
-    if num_samples == 0:
-        print("No train Samples!!!")
-    mean_train_loss = mean_train_loss / num_samples
     
+    mean_train_loss = mean_train_loss / num_samples
     all_train_losses.append(mean_train_loss.item())
 
     mean_val_loss = 0
@@ -191,10 +196,10 @@ for epoch in range(NUM_EPOCHS):
 
     val_time = time() - t0
     wandb.log({"epoch": epoch+1, 'num_val_samples': num_samples})
-    if num_samples == 0:
-        print("No Val Samples!!!")
+    
     mean_val_loss = mean_val_loss / (num_samples + 1e-9)
-    #wandb.log({'mean_val_loss': mean_val_loss.item()})
+    all_val_losses.append(mean_val_loss.item())
+
     wandb.log({"epoch": epoch+1, "train_loss": mean_train_loss.item(), "val_loss": mean_val_loss.item()})
     wandb.log({"epoch": epoch+1, 'train-time': train_time, 'total-train-time':total_train_time, 'val-time': val_time})
 
@@ -202,8 +207,7 @@ for epoch in range(NUM_EPOCHS):
     #wandb.log({'image input': [wandb.Image(image_b.squeeze().cpu().numpy(), caption="Input Image")]}) # [96, 96, 96]
     #wandb.log({'prediction': [wandb.Image(pred.squeeze().cpu().numpy(), caption="Input Image")]})
     #wandb.log({'target': [wandb.Image(label.squeeze().cpu().numpy(), caption="Input Image")]})
-               
-    all_val_losses.append(mean_val_loss.item())
+    
     if mean_val_loss.item() < best_val_loss:
         print('Saving best model checkpoint, epoch', epoch, 'val loss', mean_val_loss.item())
         best_val_loss = mean_val_loss
@@ -214,7 +218,7 @@ for epoch in range(NUM_EPOCHS):
             'epoch': epoch,
             'train_losses': all_train_losses,
             'val_losses': all_val_losses,
-        }, convert_path(f'./models/baseline/model_checkpoint_e{epoch}_loss{mean_val_loss}.pth'))
+        }, convert_path(SAVE_PATH + f'model_checkpoint_e{epoch}_loss{mean_val_loss}.pth'))
 
     print('Epoch', epoch + 1, 'train loss', mean_train_loss.item(), 'val loss', mean_val_loss.item(), 'train time', train_time, 'seconds val time', val_time, 'seconds')
 
