@@ -38,18 +38,21 @@ parser = argparse.ArgumentParser()
 parser.add_argument('mode', type=str, default='train_baseline', choices=['train_baseline', 'train_with_pretrain'], help='Whether to train from scratch or using pretrained model (default: %(default)s)')
 args = parser.parse_args()
 
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+print("Using device: ", DEVICE)
+
 if args.mode == "train_baseline":
     print("Training from scratch")
-    MODEL = SCRATCH_MODEL
-    SAVE_PATH = './models/baseline/'
+    #MODEL = SCRATCH_MODEL
+    #SAVE_PATH = './models/baseline/'
 
 elif args.mode == "train_with_pretrain":
     print("Training using pretrained model: ", PRE_MODEL_NAME)
     MODEL = PRE_MODEL_NAME
     SAVE_PATH = './models/train_with_pretrain/'
+    checkpoint = torch.load(convert_path(MODEL), map_location=torch.device(DEVICE))
+    model.load_state_dict(checkpoint['model'])
 
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-print("Using device: ", DEVICE)
 print("Data path: ", DATA_PATH)
 
 
@@ -118,9 +121,7 @@ val_loader = DataLoader(
     num_workers=0,  # Just use the main thread for now, we just need it for visualization
 )
 
-# Loading Model
-checkpoint = torch.load(convert_path(MODEL), map_location=torch.device(DEVICE))
-model.load_state_dict(checkpoint['model'])
+# Loading Model to device
 model.to(DEVICE)
 
 wandb.init(

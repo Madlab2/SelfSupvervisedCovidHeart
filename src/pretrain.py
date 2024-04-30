@@ -46,8 +46,8 @@ val_label = image[..., cut_idx_z:]
 # and replace these layers with the right output_dim and reinitialize them
 # Comment: For now, we employ the channel hack
 
-checkpoint = torch.load(convert_path(SCRATCH_MODEL), map_location=torch.device(DEVICE))
-model.load_state_dict(checkpoint['model'])
+#checkpoint = torch.load(convert_path(SCRATCH_MODEL), map_location=torch.device(DEVICE))
+#model.load_state_dict(checkpoint['model'])
 model.to(DEVICE)
 
 transforms = Compose([
@@ -129,7 +129,7 @@ for epoch in range(PRE_NUM_EPOCHS):
             pred = model(image_b)  # [1, 2, 96, 96, 96]
             #loss = pre_loss_fn(input=pred.softmax(dim=1), target=label)
             loss = pre_loss_fn(input=pred, target=label)
-
+            
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
