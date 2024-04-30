@@ -7,7 +7,7 @@ if sys.path[0].find("dtu/3d-imaging-center") != -1:
     ### Data Config ###
     DATA_PATH = convert_path('/dtu/3d-imaging-center/courses/02510/data/CovidHeart/covid_small')
     SCRATCH_MODEL = 'models/worst_model_checkpoint.pth'   # no pretraining
-    PRE_MODEL_NAME = 'models/pretrain/run_2_good_val/pretrain_model_checkpoint_e32_loss0_042500823736190796.pth' # specifiy path for pretrained model
+    PRE_MODEL_NAME = 'models/pretrain/real_scratch/pretrain_model_checkpoint_e37_loss0.004473115783184767.pth' # specifiy path for pretrained model
 
     PRE_TRAIN_NOISVAR = 0.01
     WINDOW_OVERLAP = 0.5

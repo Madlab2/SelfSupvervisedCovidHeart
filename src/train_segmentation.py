@@ -44,7 +44,7 @@ print("Using device: ", DEVICE)
 if args.mode == "train_baseline":
     print("Training from scratch")
     #MODEL = SCRATCH_MODEL
-    #SAVE_PATH = './models/baseline/'
+    SAVE_PATH = './models/baseline/'
 
 elif args.mode == "train_with_pretrain":
     print("Training using pretrained model: ", PRE_MODEL_NAME)
@@ -54,7 +54,8 @@ elif args.mode == "train_with_pretrain":
     model.load_state_dict(checkpoint['model'])
 
 print("Data path: ", DATA_PATH)
-
+# Loading Model to device
+model.to(DEVICE)
 
 image = np.load(join(DATA_PATH, 'train', 'data_0.npy'))
 size_x, size_y, size_z = image.shape
@@ -120,9 +121,6 @@ val_loader = DataLoader(
     shuffle=False,
     num_workers=0,  # Just use the main thread for now, we just need it for visualization
 )
-
-# Loading Model to device
-model.to(DEVICE)
 
 wandb.init(
     project="jacana_sounds",

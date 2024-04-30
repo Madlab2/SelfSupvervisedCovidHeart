@@ -13,7 +13,7 @@ from dataset import RepeatedCacheDataset
 from utils import *
 
 
-PRE_TRAIN = False
+PRE_TRAIN = True
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 print("Inference: loading image...")
@@ -73,7 +73,7 @@ ax[1, 2].imshow(pred[0, 1, pred.shape[-3] // 2, :, :], alpha=0.4)
 
 if PRE_TRAIN:
     plt.suptitle("With Pretrain - Inference on Full Image")
-    plt.savefig('./outputs/figures/train_with_pretrain/pretrain_29_04_24.png', dpi=500)
+    plt.savefig('./outputs/figures/train_with_pretrain/pretrain_29_04_24_2.png', dpi=500)
 else:
     plt.suptitle("No Pretrain - Inference on Full Image")
     plt.savefig('./outputs/figures/baseline/run_25_04_24_3.png', dpi=500)
