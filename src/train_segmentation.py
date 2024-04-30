@@ -210,11 +210,12 @@ for epoch in range(NUM_EPOCHS):
     fig, ax = plt.subplots(3, 4, figsize=(9, 6))
     for i in range(4):
         ax[0, i].imshow(image_plot[i, 0, :, :, image_plot.shape[3] // 2], cmap='gray')
-        ax[1, i].imshow(pred[i, 0, :, :, pred.shape[3] // 2], cmap='gray')
-        ax[2, i].imshow(label_plot[i, 0, :, :, label_plot.shape[3] // 2], cmap='gray')
+        ax[1, i].imshow(image_plot[i, 0, :, :, image_plot.shape[3] // 2], cmap='gray')
+        ax[1, i].imshow(pred[i, 0, :, :, pred.shape[3] // 2], alpha=0.4)
+        ax[2, i].imshow(label_plot[i, 0, :, :, label_plot.shape[3] // 2])
         if i == 0:
             ax[0, i].set_ylabel('image')
-            ax[1, i].set_ylabel('prediction')
+            ax[1, i].set_ylabel('image + prediction')
             ax[2, i].set_ylabel('label')
     wandb.log({"epoch": epoch+1,'Segmentation-Pred': fig})
     
