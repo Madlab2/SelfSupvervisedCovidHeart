@@ -117,7 +117,8 @@ for epoch in range(PRE_NUM_EPOCHS):
     print(f"Epoch {epoch + 1}/{PRE_NUM_EPOCHS}")
     wandb.log({'epoch-and-time (pretrain)': epoch + 1})
 
-    for batch in tqdm(train_loader):
+    for batch in tqdm(train_loader): 
+        # TODO HOW ABOUT NORMALIZATION? # example min/max values for labels and image are 1.6, -0.4, so kinda normalized?
         image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)# [1, 1, 96, 96, 96]
         label = batch['label'].as_tensor().to(DEVICE, non_blocking=True) # [1, 1, 96, 96, 96]
         

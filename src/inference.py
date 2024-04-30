@@ -52,20 +52,31 @@ pred = pred.cpu().numpy()
 image = image.cpu().numpy()
 
 print("Inference: creating plots...")
-fig, ax = plt.subplots(1, 3, figsize=(18, 6))
-ax[0].imshow(image[:, :, image.shape[-1] // 2], cmap='gray')
-ax[0].imshow(pred[0, 0, :, :, pred.shape[-1] // 2], alpha=0.4)
-ax[1].imshow(image[:, image.shape[-2] // 2, :], cmap='gray')
-ax[1].imshow(pred[0, 0, :, pred.shape[-2] // 2, :], alpha=0.4)
-ax[2].imshow(image[image.shape[-3] // 2, :, :], cmap='gray')
-ax[2].imshow(pred[0, 0, pred.shape[-3] // 2, :, :], alpha=0.4)
+fig, ax = plt.subplots(2, 3, figsize=(18, 12))
+ax[0, 0].imshow(image[:, :, image.shape[-1] // 2], cmap='gray')
+ax[0, 0].imshow(pred[0, 0, :, :, pred.shape[-1] // 2], alpha=0.4)
+
+ax[1, 0].imshow(image[:, :, image.shape[-1] // 2], cmap='gray')
+ax[1, 0].imshow(pred[0, 1, :, :, pred.shape[-1] // 2], alpha=0.4)
+
+ax[0, 1].imshow(image[:, image.shape[-2] // 2, :], cmap='gray')
+ax[0, 1].imshow(pred[0, 0, :, pred.shape[-2] // 2, :], alpha=0.4)
+
+ax[1, 1].imshow(image[:, image.shape[-2] // 2, :], cmap='gray')
+ax[1, 1].imshow(pred[0, 1, :, pred.shape[-2] // 2, :], alpha=0.4)
+
+ax[0, 2].imshow(image[image.shape[-3] // 2, :, :], cmap='gray')
+ax[0, 2].imshow(pred[0, 0, pred.shape[-3] // 2, :, :], alpha=0.4)
+
+ax[1, 2].imshow(image[image.shape[-3] // 2, :, :], cmap='gray')
+ax[1, 2].imshow(pred[0, 1, pred.shape[-3] // 2, :, :], alpha=0.4)
 
 if PRE_TRAIN:
     plt.suptitle("With Pretrain - Inference on Full Image")
     plt.savefig('./outputs/figures/train_with_pretrain/pretrain_29_04_24.png', dpi=500)
 else:
     plt.suptitle("No Pretrain - Inference on Full Image")
-    plt.savefig('./outputs/figures/baseline/run_25_04_24.png', dpi=500)
+    plt.savefig('./outputs/figures/baseline/run_25_04_24_3.png', dpi=500)
 
 pred = np.uint8(pred[0, 0] * 255) # [1024 1024 1024]
 
