@@ -2,8 +2,8 @@
 *.pth
 *.nii.gz
 *.png
+*.pth
 venv/
 data/
-models/
 src/__pycache__/
 wandb/
