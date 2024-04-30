@@ -121,13 +121,14 @@ for epoch in range(PRE_NUM_EPOCHS):
         # TODO HOW ABOUT NORMALIZATION? # example min/max values for labels and image are 1.6, -0.4, so kinda normalized?
         image_b = batch['image'].as_tensor().to(DEVICE, non_blocking=True)# [1, 1, 96, 96, 96]
         label = batch['label'].as_tensor().to(DEVICE, non_blocking=True) # [1, 1, 96, 96, 96]
-        
+
         # channel hack: make label.shape be [1, 2, 96, 96, 96] by duplicating/copying. We train both out-channels to the same target
         label = label.repeat(1, 2, 1, 1, 1)
         
         with torch.cuda.amp.autocast():
             pred = model(image_b)  # [1, 2, 96, 96, 96]
-            loss = pre_loss_fn(input=pred.softmax(dim=1), target=label)
+            #loss = pre_loss_fn(input=pred.softmax(dim=1), target=label)
+            loss = pre_loss_fn(input=pred, target=label)
 
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -161,7 +162,8 @@ for epoch in range(PRE_NUM_EPOCHS):
 
             with torch.cuda.amp.autocast():
                 pred = model(image_b)  # [1, 2, 96, 96, 96]
-                loss = pre_loss_fn(input=pred.softmax(dim=1), target=label)
+                #loss = pre_loss_fn(input=pred.softmax(dim=1), target=label)
+                loss = pre_loss_fn(input=pred, target=label)
 
         mean_val_loss += loss * len(image_b)
         num_samples += len(image_b)
