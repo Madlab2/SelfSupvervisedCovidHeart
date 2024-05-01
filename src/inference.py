@@ -13,15 +13,15 @@ from dataset import RepeatedCacheDataset
 from utils import *
 
 
-PRE_TRAIN = True
+PRE_TRAIN = False
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 print("Inference: loading image...")
 image = torch.from_numpy(np.load(join(DATA_PATH, 'train', 'data_0.npy'))).float().to(DEVICE)
 
 # specify best model here:
-BEST_MODEL_WITH_PRETRAIN = './models/train_with_pretrain/run_02/model_checkpoint_e84_loss0.14006251096725464.pth'
-BEST_MODEL_SCRATCH = './models/baseline/run_25_04_24/model_checkpoint_e64_loss0.13836070895195007.pth'
+BEST_MODEL_WITH_PRETRAIN = './models/train_with_pretrain/real_scratch/model_checkpoint_e87_loss0.34498000144958496.pth'
+BEST_MODEL_SCRATCH = './models/baseline/real_scratch/model_checkpoint_e95_loss0.3363226056098938.pth'
 
 if PRE_TRAIN:
     BEST_MODEL = BEST_MODEL_WITH_PRETRAIN
@@ -73,18 +73,18 @@ ax[1, 2].imshow(pred[0, 1, pred.shape[-3] // 2, :, :], alpha=0.4)
 
 if PRE_TRAIN:
     plt.suptitle("With Pretrain - Inference on Full Image")
-    plt.savefig('./outputs/figures/train_with_pretrain/pretrain_29_04_24_2.png', dpi=500)
+    plt.savefig('./outputs/figures/train_with_pretrain/pre_final.png', dpi=500)
 else:
     plt.suptitle("No Pretrain - Inference on Full Image")
-    plt.savefig('./outputs/figures/baseline/run_25_04_24_3.png', dpi=500)
+    plt.savefig('./outputs/figures/baseline/baseline_final.png', dpi=500)
 
 pred = np.uint8(pred[0, 0] * 255) # [1024 1024 1024]
 
 # Pick one
 #imsave('pred.tiff', pred)  # For paraview
 if PRE_TRAIN:
-    nib.save(nib.Nifti1Image(pred, np.eye(4)), convert_path('./outputs/files/train_with_pretrain/pretrain_29_04_24.nii.gz')) # For ITK-SNAP
-    np.save('./outputs/files/train_with_pretrain/pretrain_29_04_24.npy', pred)  # For TomViz
+    nib.save(nib.Nifti1Image(pred, np.eye(4)), convert_path('./outputs/files/train_with_pretrain/pre_final.nii.gz')) # For ITK-SNAP
+    np.save('./outputs/files/train_with_pretrain/pre_final.npy', pred)  # For TomViz
 else:
-    nib.save(nib.Nifti1Image(pred, np.eye(4)), convert_path('./outputs/files/baseline/run_25_04_24.nii.gz')) # For ITK-SNAP
-    np.save('./outputs/files/baseline/run_25_04_24.npy', pred)  # For TomViz
+    nib.save(nib.Nifti1Image(pred, np.eye(4)), convert_path('./outputs/files/baseline/baseline_final.nii.gz')) # For ITK-SNAP
+    np.save('./outputs/files/baseline/baseline_final.npy', pred)  # For TomViz
