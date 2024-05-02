@@ -1,4 +1,4 @@
-## Self-Supervised Pre-Training for Covid-19 Heart Pathology Identification
+## Self-Supervised Pre-Training for Identification of Blood Vessels in Cardiac Tissue
 
 Repository for the self-supervised learning project in DTU course "Deep Learning for Experimental 3D Data".
 
